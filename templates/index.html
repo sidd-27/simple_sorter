@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag and Drop Multiple File Upload</title>
+    <style>
+        #drop-zone {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ccc;
+        }
+        #drop-zone.hover {
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+        #file-input {
+            display: none;
+        }
+        #upload-status {
+            margin-top: 20px;
+        }
+        #file-previews {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .file-preview {
+            width: 100px;
+            height: 100px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .file-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .file-status {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Drag and Drop Multiple File Upload</h2>
+
+    <!-- Drop Zone -->
+    <div id="drop-zone">
+        Drag files here or click to select
+        <input type="file" id="file-input" name="files" multiple />
+    </div>
+
+    <!-- File Previews -->
+    <div id="file-previews"></div>
+
+    <!-- Upload Status -->
+    <div id="upload-status"></div>
+
+    <!-- JavaScript to handle drag and drop -->
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadStatus = document.getElementById('upload-status');
+        const filePreviews = document.getElementById('file-previews');
+
+        // Handle the dragover event
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('hover');
+        });
+
+        // Handle the dragleave event
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('hover');
+        });
+
+        // Handle the drop event
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('hover');
+
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // Open file dialog when clicking on the drop zone
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Trigger file upload when file is selected
+        fileInput.addEventListener('change', () => {
+            const files = fileInput.files;
+            handleFiles(files);
+        });
+
+        // Handle multiple files: preview and upload them
+        function handleFiles(files) {
+            // Show status
+            uploadStatus.textContent = `Uploading ${files.length} file(s)...`;
+
+            // Clear existing previews
+            filePreviews.innerHTML = '';
+
+            // Loop through each file
+            Array.from(files).forEach((file, index) => {
+                // Show file preview
+                const filePreview = document.createElement('div');
+                filePreview.classList.add('file-preview');
+
+                // Create image element for preview
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);  // create a preview URL
+                filePreview.appendChild(img);
+
+                // Create status label
+                const statusLabel = document.createElement('div');
+                statusLabel.classList.add('file-status');
+                statusLabel.textContent = 'Uploading...';
+                filePreview.appendChild(statusLabel);
+
+                filePreviews.appendChild(filePreview);
+
+                // Upload the file
+                uploadFile(file, statusLabel);
+            });
+        }
+
+        // Upload the file
+        function uploadFile(file, statusLabel) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Send the file to Flask
+            fetch('http://127.0.0.1:5000//upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    statusLabel.textContent = `Uploaded: ${file.name}`;
+                } else {
+                    statusLabel.textContent = 'Upload failed!';
+                }
+            })
+            .catch(() => {
+                statusLabel.textContent = 'Upload failed!';
+            });
+        }
+    </script>
+</body>
+</html>
